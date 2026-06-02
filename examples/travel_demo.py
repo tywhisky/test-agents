@@ -4,6 +4,7 @@ import os
 from agent_playground.agents.travel_assistant import DEFAULT_TRAVEL_PROMPT, create_travel_agent
 from agent_playground.config import load_config
 from agent_playground.llm import OpenAICompatibleClient
+from agent_playground.memory import MemoryStore
 from agent_playground.runner import run_agent
 
 
@@ -20,7 +21,10 @@ def main() -> None:
         base_url=config.base_url,
     )
     agent = create_travel_agent(config.tavily_api_key)
-    run_agent(agent, llm, DEFAULT_TRAVEL_PROMPT)
+    memory_store = MemoryStore()
+    memory = memory_store.load()
+    run_agent(agent, llm, DEFAULT_TRAVEL_PROMPT, memory=memory)
+    memory_store.save(memory)
 
 
 if __name__ == "__main__":

@@ -23,23 +23,48 @@ test-agent/
 │       ├── actions.py              # Parse Action lines from model output
 │       ├── config.py               # Read and validate .env values
 │       ├── llm.py                  # OpenAI-compatible LLM client wrapper
+│       ├── memory.py               # Local user preference memory
 │       ├── runner.py               # Generic ReAct agent loop
 │       ├── agents/
 │       │   └── travel_assistant.py # Travel agent definition
 │       ├── prompts/
 │       │   └── travel.py           # Travel agent system prompt
 │       └── tools/
-│           ├── weather.py          # Weather tool
-│           └── attractions.py      # Tavily attraction search tool
+│           ├── attractions.py      # Tavily attraction search tool
+│           ├── travel_recommendations.py # Ticket fallback helpers
+│           └── weather.py          # Weather tool
 └── tests/
     ├── test_actions.py             # Parser tests
     └── test_config.py              # Config tests
 ```
 
-The travel assistant currently has two tools:
+The travel assistant currently has these tools:
 
 - `get_weather(city="...")`
 - `get_attraction(city="...", weather="...")`
+- `check_ticket_availability(attraction="...")`
+- `recommend_alternatives(city="...", weather="...", unavailable_attraction="...", preferences="...")`
+- `remember_preference(preference="...")`
+- `remember_budget(budget_range="...")`
+- `record_rejection(recommendation="...")`
+- `record_acceptance(recommendation="...")`
+
+## Memory And Fallback Behavior
+
+The agent stores local user memory in `.agent_memory.json`. This file is ignored by git because it is runtime state, like a personal notebook.
+
+The current memory feature can remember:
+
+- Attraction preferences, such as historical, cultural, museum, outdoor.
+- Budget range.
+- Recently rejected recommendations.
+- Previously accepted recommendations.
+
+The travel agent also has fallback behavior:
+
+- It should check ticket availability before finalizing an attraction.
+- If an attraction is sold out, it can call `recommend_alternatives(...)`.
+- If the user rejects 3 recommendations in a row, memory tells the model to reflect and change strategy.
 
 ## Setup
 
@@ -94,3 +119,4 @@ This keeps each concept small:
 - `runner` owns the loop.
 - `llm` owns model API calls.
 - `config` owns environment setup.
+- `memory` owns remembered preferences and rejection history.

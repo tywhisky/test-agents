@@ -45,6 +45,9 @@ pip-delete-this-directory.txt
 # Project planning notes
 docs/
 
+# Local agent memory
+.agent_memory.json
+
 # ==========================================
 # 3. Testing, Coverage, and Linting
 # ==========================================
