@@ -1,0 +1,104 @@
+# ==========================================
+# 1. Python Core & Caching
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# 2. Virtual Environments & Package Managers
+# ==========================================
+# Standard venv, virtualenv, and pipenv
+.venv/
+venv/
+ENV/
+env/
+.env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Modern Python tooling (uv, Poetry, Hatch)
+.uv/
+.poetry/
+.pdm/
+.hatch/
+
+# ==========================================
+# 3. Testing, Coverage, and Linting
+# ==========================================
+.pytest_cache/
+.htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+
+# ==========================================
+# 4. Security & Environment Variables
+# ==========================================
+# NEVER commit raw credentials! 
+# Keep your actual secrets in local .env files
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.secret
+
+# ==========================================
+# 5. IDEs and Editors Configuration
+# ==========================================
+# VS Code
+.vscode/
+!.vscode/extensions.json
+
+# JetBrains / PyCharm
+.idea/
+
+# Editors swap files
+*.swp
+*.swo
+*~
+\#*\#
+.#*
+
+# ==========================================
+# 6. OS Generated Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
