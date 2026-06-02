@@ -42,6 +42,9 @@ pip-delete-this-directory.txt
 .pdm/
 .hatch/
 
+# Project planning notes
+docs/
+
 # ==========================================
 # 3. Testing, Coverage, and Linting
 # ==========================================

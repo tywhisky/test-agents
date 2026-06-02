@@ -1,7 +1,7 @@
 [project]
 name = "test-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "A beginner-friendly playground for learning Python agents"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -10,3 +10,10 @@ dependencies = [
     "requests>=2.34.2",
     "tavily-python>=0.7.25",
 ]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,19 +1,17 @@
 from dotenv import load_dotenv
+import os
+
 from agent_playground.agents.travel_assistant import DEFAULT_TRAVEL_PROMPT, create_travel_agent
 from agent_playground.config import load_config
 from agent_playground.llm import OpenAICompatibleClient
 from agent_playground.runner import run_agent
-import os
-
-load_dotenv()
 
 
-def main():
-    print("Start first weather agent:")
+def main() -> None:
+    load_dotenv()
     config = load_config(os.environ)
     if not config.is_complete:
         print("Missing required environment variables: " + ", ".join(config.missing_values))
-        print("Add them to your .env file, then run `uv run python main.py` again.")
         return
 
     llm = OpenAICompatibleClient(

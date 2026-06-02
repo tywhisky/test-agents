@@ -1,227 +1,25 @@
-import requests
+from dotenv import load_dotenv
 import os
-from tavily import TavilyClient
-from openai import OpenAI
-import re
 
-
-AGENT_SYSTEM_PROMPT = """
-You are a simple ReAct-style travel assistant agent.
-
-You can use these tools:
-- get_weather(city="city name")
-- get_attraction(city="city name", weather="weather summary")
-
-At every step, respond in exactly this format:
-Thought: explain what you need to do next
-Action: tool_name(argument="value")
-
-When you have enough information, finish with:
-Thought: explain the final answer
-Action: Finish[final answer for the user]
-
-Do not call tools that are not listed.
-Do not invent observations. Wait for the Observation from the program.
-"""
-
-
-def get_weather(city: str) -> str:
-    """
-    Query real weather information by calling the wttr.in API.
-    """
-    # API endpoint, we request data in JSON format
-    url = f"https://wttr.in/{city}?format=j1"
-
-    try:
-        # Make network request
-        response = requests.get(url)
-        # Check if response status code is 200 (success)
-        response.raise_for_status()
-        # Parse returned JSON data
-        data = response.json()
-
-        # Extract current weather conditions
-        current_condition = data['current_condition'][0]
-        weather_desc = current_condition['weatherDesc'][0]['value']
-        temp_c = current_condition['temp_C']
-
-        # Format as natural language return
-        return f"{city} current weather: {weather_desc}, temperature {temp_c} degrees Celsius"
-
-    except requests.exceptions.RequestException as e:
-        # Handle network errors
-        return f"Error: Network problem encountered when querying weather - {e}"
-    except (KeyError, IndexError) as e:
-        # Handle data parsing errors
-        return f"Error: Failed to parse weather data, city name may be invalid - {e}"
-
-def get_attraction(city: str, weather: str) -> str:
-    """
-    Based on city and weather, use Tavily Search API to search and return optimized attraction recommendations.
-    """
-    # 1. Read API key from environment variable
-    api_key = os.environ.get("TAVILY_API_KEY")
-    if not api_key:
-        return "Error: TAVILY_API_KEY environment variable not configured."
-
-    # 2. Initialize Tavily client
-    tavily = TavilyClient(api_key=api_key)
-
-    # 3. Construct a precise query
-    query = f"'{city}' most worthwhile tourist attractions and reasons in '{weather}' weather"
-
-    try:
-        # 4. Call API, include_answer=True will return a comprehensive answer
-        response = tavily.search(query=query, search_depth="basic", include_answer=True)
-
-        # 5. Tavily's returned results are already very clean and can be used directly
-        # response['answer'] is a summary answer based on all search results
-        if response.get("answer"):
-            return response["answer"]
-
-        # If there's no comprehensive answer, format raw results
-        formatted_results = []
-        for result in response.get("results", []):
-            formatted_results.append(f"- {result['title']}: {result['content']}")
-
-        if not formatted_results:
-            return "Sorry, no relevant tourist attraction recommendations found."
-
-        return "Based on search, found the following information for you:\n" + "\n".join(formatted_results)
-
-    except Exception as e:
-        return f"Error: Problem occurred when executing Tavily search - {e}"
-
-
-class OpenAICompatibleClient:
-    """
-    A client for calling any LLM service compatible with the OpenAI interface.
-    """
-    def __init__(self, model: str, api_key: str, base_url: str):
-        self.model = model
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
-
-    def generate(self, prompt: str, system_prompt: str) -> str:
-        """Call LLM API to generate response."""
-        print("Calling large language model...")
-        try:
-            messages = [
-                {'role': 'system', 'content': system_prompt},
-                {'role': 'user', 'content': prompt}
-            ]
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                stream=False
-            )
-            answer = response.choices[0].message.content
-            print("Large language model responded successfully.")
-            return answer
-        except Exception as e:
-            print(f"Error occurred when calling LLM API: {e}")
-            return "Error: Error occurred when calling language model service."
+from agent_playground.agents.travel_assistant import DEFAULT_TRAVEL_PROMPT, create_travel_agent
+from agent_playground.config import load_config
+from agent_playground.llm import OpenAICompatibleClient
+from agent_playground.runner import run_agent
 
 
 def execute() -> None:
-    # --- 1. Configure LLM client ---
-    api_key = os.getenv("API_KEY")
-    base_url = os.getenv("BASE_URL")
-    model_id = os.getenv("MODEL_ID") or os.getenv("MODEL_NAME")
-    tavily_api_key = os.getenv("TAVILY_API_KEY")
-
-    missing_config = [
-        name
-        for name, value in {
-            "API_KEY": api_key,
-            "BASE_URL": base_url,
-            "MODEL_ID or MODEL_NAME": model_id,
-            "TAVILY_API_KEY": tavily_api_key,
-        }.items()
-        if not value
-    ]
-
-    if missing_config:
-        print("Missing required environment variables: " + ", ".join(missing_config))
+    """Compatibility wrapper for the original learning-project import path."""
+    load_dotenv()
+    config = load_config(os.environ)
+    if not config.is_complete:
+        print("Missing required environment variables: " + ", ".join(config.missing_values))
         print("Add them to your .env file, then run `uv run python main.py` again.")
         return
 
-    available_tools = {
-        "get_weather": get_weather,
-        "get_attraction": get_attraction,
-    }
-
     llm = OpenAICompatibleClient(
-        model=model_id,
-        api_key=api_key,
-        base_url=base_url
+        model=config.model,
+        api_key=config.api_key,
+        base_url=config.base_url,
     )
-
-    # --- 2. Initialize ---
-    user_prompt = "Hello, please help me check today's weather in Beijing, and then recommend a suitable tourist attraction based on the weather."
-    prompt_history = [f"User request: {user_prompt}"]
-
-    print(f"User input: {user_prompt}\n" + "="*40)
-
-    # --- 3. Run main loop ---
-    for i in range(5):
-        print(f"--- Loop {i+1} ---\n")
-
-        # 3.1. Build Prompt
-        full_prompt = "\n".join(prompt_history)
-
-        # 3.2. Call LLM for thinking
-        llm_output = llm.generate(full_prompt, system_prompt=AGENT_SYSTEM_PROMPT)
-
-        # Print the model output first so debugging the loop is easier.
-        print(f"Raw Model output:\n{llm_output}\n")
-
-        match = re.search(r'(Thought:.*?Action:.*?)(?=\n\s*(?:Thought:|Action:|Observation:)|\Z)',
-                          llm_output, re.DOTALL)
-        if match:
-            truncated = match.group(1).strip()
-            if truncated != llm_output.strip():
-                llm_output = truncated
-                print("-> Truncated extra Thought-Action pairs")
-
-        prompt_history.append(llm_output)
-
-        # 3.3. Parse and execute action
-        action_match = re.search(r"Action:\s*(.*)", llm_output, re.IGNORECASE)
-        if not action_match:
-            observation = "Error: No action found. Please explicitly use Action: tool_name(arguments) or Action: Finish[answer]"
-            observation_str = f"Observation: {observation}"
-            print(f"{observation_str}\n" + "="*40)
-            prompt_history.append(observation_str)
-            continue
-
-        action_str = action_match.group(1).strip()
-
-        if action_str.startswith("Finish"):
-            finish_match = re.match(r"Finish(?:\[(.*)\]|\((.*)\))", action_str)
-            final_answer = finish_match.group(1) or finish_match.group(2) if finish_match else action_str
-            print(f"Task completed! {final_answer}")
-            break
-
-        try:
-            tool_name_match = re.search(r"(\w+)\(", action_str)
-            args_match = re.search(r"\((.*)\)", action_str)
-
-            if not tool_name_match or not args_match:
-                raise ValueError("Action format invalid. Use tool_name(key=\"value\")")
-
-            tool_name = tool_name_match.group(1)
-            args_str = args_match.group(1)
-            kwargs = dict(re.findall(r'(\w+)="([^"]*)"', args_str))
-
-            if tool_name in available_tools:
-                observation = available_tools[tool_name](**kwargs)
-            else:
-                observation = f"Error: Undefined tool '{tool_name}'"
-
-        except Exception as e:
-            observation = f"Error parsing/executing action: {str(e)}"
-
-        # 3.4. Record observation results
-        observation_str = f"Observation: {observation}"
-        print(f"{observation_str}\n" + "="*40)
-        prompt_history.append(observation_str)
+    agent = create_travel_agent(config.tavily_api_key)
+    run_agent(agent, llm, DEFAULT_TRAVEL_PROMPT)

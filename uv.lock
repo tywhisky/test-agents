@@ -489,7 +489,7 @@ wheels = [
 [[package]]
 name = "test-agent"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "openai" },
     { name = "python-dotenv" },
