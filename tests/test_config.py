@@ -19,6 +19,20 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(config.model, "test-model")
         self.assertEqual(config.tavily_api_key, "test-tavily-key")
 
+    def test_load_config_accepts_chapter_llm_environment_names(self):
+        env = {
+            "LLM_API_KEY": "test-api-key",
+            "LLM_BASE_URL": "https://example.test/v1",
+            "LLM_MODEL_ID": "test-model",
+            "TAVILY_API_KEY": "test-tavily-key",
+        }
+
+        config = load_config(env)
+
+        self.assertEqual(config.api_key, "test-api-key")
+        self.assertEqual(config.base_url, "https://example.test/v1")
+        self.assertEqual(config.model, "test-model")
+
     def test_load_config_reports_missing_values(self):
         config = load_config({})
 

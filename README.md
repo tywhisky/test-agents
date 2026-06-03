@@ -2,7 +2,14 @@
 
 This is a beginner-friendly playground for learning how Python agents work.
 
-The current demo is a ReAct-style travel assistant. ReAct means the model loops through:
+The current demo is a ReAct-style travel assistant. The project also includes
+chapter-style implementations of three classic agent loops:
+
+- `ReAct`: think, act with a tool, observe the result, then repeat.
+- `Plan-and-Solve`: create a full plan first, then execute each step.
+- `Reflection`: create an initial answer, review it, then refine it.
+
+ReAct means the model loops through:
 
 1. The user asks a question.
 2. The language model returns a `Thought` and an `Action`.
@@ -17,10 +24,12 @@ The current demo is a ReAct-style travel assistant. ReAct means the model loops 
 test-agent/
 ├── main.py                         # Simple app entry point
 ├── examples/
+│   ├── chapter_agent_loops.py      # Scripted examples for chapter loops
 │   └── travel_demo.py              # Example script for the travel agent
 ├── src/
 │   └── agent_playground/
 │       ├── actions.py              # Parse Action lines from model output
+│       ├── chapter_agents.py       # ReAct, Plan-and-Solve, and Reflection loops
 │       ├── config.py               # Read and validate .env values
 │       ├── llm.py                  # OpenAI-compatible LLM client wrapper
 │       ├── memory.py               # Local user preference memory
@@ -31,11 +40,14 @@ test-agent/
 │       │   └── travel.py           # Travel agent system prompt
 │       └── tools/
 │           ├── attractions.py      # Tavily attraction search tool
+│           ├── search.py           # Generic Tavily web search tool
 │           ├── travel_recommendations.py # Ticket fallback helpers
 │           └── weather.py          # Weather tool
 └── tests/
     ├── test_actions.py             # Parser tests
-    └── test_config.py              # Config tests
+    ├── test_chapter_agents.py      # Chapter agent loop tests
+    ├── test_config.py              # Config tests
+    └── test_llm.py                 # LLM client tests
 ```
 
 The travel assistant currently has these tools:
@@ -78,6 +90,8 @@ MODEL_NAME=your_model_name
 ```
 
 `MODEL_ID` also works if your tutorial or provider uses that name instead of `MODEL_NAME`.
+The chapter code also accepts the book-style names `LLM_API_KEY`, `LLM_BASE_URL`,
+and `LLM_MODEL_ID`.
 
 ## Run
 
@@ -89,6 +103,13 @@ You can also run the example directly:
 
 ```bash
 uv run python examples/travel_demo.py
+```
+
+The chapter loop example uses scripted model responses, so it does not need API
+access:
+
+```bash
+uv run python examples/chapter_agent_loops.py
 ```
 
 If everything is configured, the program will:
@@ -120,3 +141,19 @@ This keeps each concept small:
 - `llm` owns model API calls.
 - `config` owns environment setup.
 - `memory` owns remembered preferences and rejection history.
+
+## Chapter Agent Loops
+
+The chapter implementations live in `src/agent_playground/chapter_agents.py`.
+They are intentionally small and explicit so you can see the mechanics:
+
+- `ToolExecutor` registers simple string-in, string-out tools.
+- `ReActAgent` parses `Thought:` and `Action:` text, calls tools, and appends
+  `Observation:` history.
+- `Planner`, `Executor`, and `PlanAndSolveAgent` split planning from execution.
+- `ReflectionMemory` and `ReflectionAgent` store execution/review records and
+  iterate until feedback says no improvement is needed.
+
+For live web search, use `create_search_tool(tavily_api_key)` from
+`agent_playground.tools.search`. The project uses Tavily because it is already
+part of the existing dependency set.

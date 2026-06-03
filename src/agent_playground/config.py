@@ -16,9 +16,9 @@ class AppConfig:
 
 
 def load_config(env: Mapping[str, str]) -> AppConfig:
-    api_key = env.get("API_KEY")
-    base_url = env.get("BASE_URL")
-    model = env.get("MODEL_ID") or env.get("MODEL_NAME")
+    api_key = env.get("API_KEY") or env.get("LLM_API_KEY")
+    base_url = env.get("BASE_URL") or env.get("LLM_BASE_URL")
+    model = env.get("MODEL_ID") or env.get("MODEL_NAME") or env.get("LLM_MODEL_ID")
     tavily_api_key = env.get("TAVILY_API_KEY")
 
     missing_values = [
@@ -39,4 +39,3 @@ def load_config(env: Mapping[str, str]) -> AppConfig:
         tavily_api_key=tavily_api_key,
         missing_values=missing_values,
     )
-

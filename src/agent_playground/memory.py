@@ -118,7 +118,7 @@ def update_memory_from_user_text(memory: UserMemory, text: str) -> None:
     if "outdoor" in lowered or "nature" in lowered:
         memory.remember_preference("outdoor")
 
-    budget_match = re.search(r"(\d+\s*-\s*\d+\s*(?:rmb|yuan|元))", text, re.IGNORECASE)
+    budget_match = re.search(r"(\d+\s*-\s*\d+\s*(?:rmb|yuan|\u5143))", text, re.IGNORECASE)
     if budget_match:
         memory.remember_budget(_normalize_budget_range(budget_match.group(1)))
 
