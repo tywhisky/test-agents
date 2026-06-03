@@ -8,6 +8,7 @@ chapter-style implementations of three classic agent loops:
 - `ReAct`: think, act with a tool, observe the result, then repeat.
 - `Plan-and-Solve`: create a full plan first, then execute each step.
 - `Reflection`: create an initial answer, review it, then refine it.
+- `RAG`: retrieve relevant local knowledge before generating an answer.
 
 ReAct means the model loops through:
 
@@ -25,6 +26,7 @@ test-agent/
 ├── main.py                         # Simple app entry point
 ├── examples/
 │   ├── chapter_agent_loops.py      # Scripted examples for chapter loops
+│   ├── rag_demo.py                 # Scripted local RAG example
 │   └── travel_demo.py              # Example script for the travel agent
 ├── src/
 │   └── agent_playground/
@@ -33,6 +35,7 @@ test-agent/
 │       ├── config.py               # Read and validate .env values
 │       ├── llm.py                  # OpenAI-compatible LLM client wrapper
 │       ├── memory.py               # Local user preference memory
+│       ├── rag.py                  # Local RAG parsing, chunking, and retrieval
 │       ├── runner.py               # Generic ReAct agent loop
 │       ├── agents/
 │       │   └── travel_assistant.py # Travel agent definition
@@ -40,6 +43,7 @@ test-agent/
 │       │   └── travel.py           # Travel agent system prompt
 │       └── tools/
 │           ├── attractions.py      # Tavily attraction search tool
+│           ├── rag.py              # RAG tool interface
 │           ├── search.py           # Generic Tavily web search tool
 │           ├── travel_recommendations.py # Ticket fallback helpers
 │           └── weather.py          # Weather tool
@@ -47,7 +51,8 @@ test-agent/
     ├── test_actions.py             # Parser tests
     ├── test_chapter_agents.py      # Chapter agent loop tests
     ├── test_config.py              # Config tests
-    └── test_llm.py                 # LLM client tests
+    ├── test_llm.py                 # LLM client tests
+    └── test_rag.py                 # RAG pipeline tests
 ```
 
 The travel assistant currently has these tools:
@@ -112,6 +117,12 @@ access:
 uv run python examples/chapter_agent_loops.py
 ```
 
+The RAG example is also local and scripted:
+
+```bash
+uv run python examples/rag_demo.py
+```
+
 If everything is configured, the program will:
 
 1. Ask the model what to do.
@@ -157,3 +168,20 @@ They are intentionally small and explicit so you can see the mechanics:
 For live web search, use `create_search_tool(tavily_api_key)` from
 `agent_playground.tools.search`. The project uses Tavily because it is already
 part of the existing dependency set.
+
+## RAG Example
+
+The local RAG implementation lives in `src/agent_playground/rag.py`, with the
+tool-facing API in `src/agent_playground/tools/rag.py`.
+
+- `convert_to_markdown(...)` reads Markdown/text files directly and uses
+  MarkItDown if it is installed.
+- `split_paragraphs_with_headings(...)` preserves Markdown heading paths.
+- `chunk_markdown(...)` creates token-sized chunks with optional overlap.
+- `InMemoryVectorStore` performs lexical cosine retrieval for local examples.
+- `RAGTool.execute(...)` supports `add_text`, `add_document`, `search`, `ask`,
+  and `stats`.
+
+This keeps the example dependency-light while matching the RAG pipeline from the
+chapter: document loading, Markdown chunking, retrieval, context injection, and
+answer generation.
