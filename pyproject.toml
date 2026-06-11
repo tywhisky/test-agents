@@ -5,7 +5,10 @@ description = "A beginner-friendly playground for learning Python agents"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "agent-framework-core>=1.8.1",
+    "agent-framework-openai>=1.8.1",
     "openai>=2.40.0",
+    "pydantic>=2.13.4",
     "python-dotenv>=1.2.2",
     "requests>=2.34.2",
     "tavily-python>=0.7.25",
